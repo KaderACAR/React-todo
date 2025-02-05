@@ -7,6 +7,8 @@ import styled, { ThemeProvider }  from "styled-components";
 import Modal from "react-bootstrap/Modal";
 import { IoMdSunny, IoIosMoon } from "react-icons/io";
 
+import ReactDragListView from "react-drag-listview"
+
 
 const GlobalStyle = styled.div`
  background-color: ${(props) => props.theme.background};
@@ -83,6 +85,19 @@ const handleSave = () => {
   setTodoAltInput(modalInput); 
   setShow(false); 
 }
+
+
+const dragProps = {
+  onDragEnd(fromIndex, toIndex) {
+    
+    const data = [...todos]
+    const item = data.splice(fromIndex, 1)[0];
+    data.splice(toIndex, 0, item);
+   setTodos(data)
+  },
+  nodeSelector: 'li',
+  handleSelector: 'li'
+};
 
   return (
     <ThemeProvider theme={isDarkTheme ? darkTheme : lightTheme}>
@@ -176,16 +191,18 @@ const handleSave = () => {
             <Card.Body>
               <Card.Title className="text-center">Görevler</Card.Title>
               {todos.length > 0 ? (
+              <ReactDragListView {...dragProps}>
                 <ul className="list-group">
              {todos.map((todo, index) => (
                <li
                  key={index}
-                className="list-group-item d-flex justify-content-between align-items-center"
+                className="list-group-item d-flex justify-content-between align-items-center mb-3"
                 style={{
                 cursor: "pointer",
+                fontFamily: "sans-serif",
                 textDecoration: todo.completed ? "line-through" : "none",
-                backgroundColor: todo.isImportant ? "#ffcccc" : "#fff", 
-                border: todo.isImportant ? "2px solid red" : "1px solid gray",
+                backgroundColor: todo.isImportant ? "#ffcccc30" : "#ffddff30", 
+                borderRadius: 12,
                  }}
                  >
               <div className="d-flex align-items-center">
@@ -229,6 +246,8 @@ const handleSave = () => {
              </li>
              ))}
                </ul>
+              </ReactDragListView> 
+
               ) : (
                 <p className="text-center text-muted">Henüz bir görev eklenmedi.</p>
               )}
