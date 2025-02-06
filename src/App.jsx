@@ -6,8 +6,8 @@ import "./App.css";
 import styled, { ThemeProvider }  from "styled-components";
 import Modal from "react-bootstrap/Modal";
 import { IoMdSunny, IoIosMoon } from "react-icons/io";
-
 import ReactDragListView from "react-drag-listview"
+import { nanoid } from "nanoid";
 
 
 const GlobalStyle = styled.div`
@@ -30,13 +30,17 @@ function App() {
   const [show, setShow] = useState(false);
   const [todoAltInput, setTodoAltInput] = useState("")
   const [isImportant, setIsImportant] = useState(false);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [selectedTodo, setSelectedTodo] = useState(null);
+ 
+
 
   const addTodo = (event) => {
     event.preventDefault();
     if (todoInput && todoAltInput && date) {
       setTodos((prevTodos) => [
         ...prevTodos,
-        { todo: todoInput, altTodo: todoAltInput, date, completed: false, isImportant: false },
+        { id: nanoid(), todo: todoInput, altTodo: todoAltInput, date, completed: false, isImportant: false },
         
       ]);
       setTodoInput("");
@@ -49,7 +53,7 @@ function App() {
 
   const deleteTodo = () => {
     setTodos((prevTodos) =>
-      prevTodos.filter((todo) => todo !== todoToDelete)
+      prevTodos.filter((todo) => todo !== todoToDelete.id)
     );
     setShowModal(false);
     setTodoToDelete(null);
@@ -60,10 +64,13 @@ function App() {
     setShowModal(true);
   };
 
-  const toggleComplete = (index) => {
-    const newTodos = [...todos];
-    newTodos[index].completed = !newTodos[index].completed;
-    setTodos(newTodos);
+
+  const toggleComplete = (id) => {
+    setTodos(prevTodos =>
+      prevTodos.map(todo =>
+        todo.id === id ? { ...todo, completed: !todo.completed } : todo
+      )
+    );
   };
 
 const lightTheme = {
@@ -98,6 +105,23 @@ const dragProps = {
   nodeSelector: 'li',
   handleSelector: 'li'
 };
+
+const handleUpdateClick = (todo) => {
+  setSelectedTodo(todo);
+  setShowUpdateModal(true);
+};
+
+const handleUpdateSave = () => {
+  if (selectedTodo) {
+    setTodos(prevTodos => 
+      prevTodos.map(todo => 
+        todo.id === selectedTodo.id ? selectedTodo : todo
+      )
+    );
+    setShowUpdateModal(false);
+  }
+};
+
 
   return (
     <ThemeProvider theme={isDarkTheme ? darkTheme : lightTheme}>
@@ -189,37 +213,43 @@ const dragProps = {
           >
             
             <Card.Body>
-              <Card.Title className="text-center">Görevler</Card.Title>
+              <Card.Title className="text-center"
+              style={{fontSize:"35px",}}>Görevler <span className="fs-3">📝</span> </Card.Title>
               {todos.length > 0 ? (
               <ReactDragListView {...dragProps}>
                 <ul className="list-group">
-             {todos.map((todo, index) => (
+             {todos.map((todo) => (
                <li
-                 key={index}
+                 key={todo.id}
                 className="list-group-item d-flex justify-content-between align-items-center mb-3"
                 style={{
                 cursor: "pointer",
                 fontFamily: "sans-serif",
                 textDecoration: todo.completed ? "line-through" : "none",
-                backgroundColor: todo.isImportant ? "#ffcccc30" : "#ffddff30", 
+                backgroundColor: todo.isImportant ? "#b10d0d" : "#f2e8cf",
+                color: todo.isImportant ? "white" : "black",
                 borderRadius: 12,
+                position:"relative"
                  }}
                  >
               <div className="d-flex align-items-center">
                <input
                type="checkbox"
                checked={todo.completed}
-               onChange={() => toggleComplete(index)}
+               onChange={() => toggleComplete(todo.id)}
                className="me-2"
                />
 
-              <Form.Check 
-              type="checkbox"
-              label=""
-              checked={todo.isImportant}
-              onChange={(e) => {
-              const newTodos = [...todos];
-              newTodos[index].isImportant = e.target.checked;
+              <input
+               type="checkbox"
+               checked={todo.isImportant}
+               onChange={(e) => {
+               const newTodos = todos.map(t => {
+               if (t.id === todo.id) {
+                return { ...t, isImportant: e.target.checked }
+               }
+                 return t
+              })
               setTodos(newTodos); 
               }}
               className="mx-3"
@@ -232,6 +262,21 @@ const dragProps = {
                    }}
               />
 
+           <small 
+           className="text-muted me-2"
+           onClick={() => navigator.clipboard.writeText(todo.id)}
+           title="ID'yi kopyala"
+            style={{
+            position: "absolute",
+            top: "5px",
+            left: "10px",
+            fontSize: "0.7rem",
+            cursor:"pointer"
+           }}
+         >
+          #{todo.id.slice(0,2)} 
+          </small>
+
               <div>
               <strong>{todo.todo}</strong>
               <br />
@@ -240,11 +285,83 @@ const dragProps = {
               <small>{todo.date}</small>
               </div>
               </div>
-             <span className="text-danger" onClick={() => confirmDelete(todo)}>
+             
+             <span className="d-flex align-items-center gap-2">
+                <Button 
+                  className="text-black" 
+                  onClick={() => handleUpdateClick(todo)}
+                  style={{ 
+                    fontSize:"15px",
+                    cursor: "pointer", 
+                    color:"rgb(102, 166, 230)", 
+                    backgroundColor:"#77B254", 
+                    border:" 1px solid #123524"}}
+                >
+                  Güncelle
+                </Button>
+
+             <Button className="text-black" onClick={() => confirmDelete(todo)}
+               style={{
+               fontSize:"15px",
+               backgroundColor:"#EB5353", 
+               border:"1px solid #6a040f"}}
+              >
                 Sil
+             </Button>
              </span>
              </li>
              ))}
+
+             <Modal show={showUpdateModal} onHide={() => setShowUpdateModal(false)}>
+            <Modal.Header closeButton>
+              <Modal.Title>Görevi Güncelle</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              <Form>
+                <Form.Group className="mb-3">
+                  <Form.Label>Görev</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={selectedTodo?.todo || ""}
+                    onChange={(e) => setSelectedTodo({
+                      ...selectedTodo, 
+                      todo: e.target.value
+                    })}
+                  />
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>Alt Görev</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={selectedTodo?.altTodo || ""}
+                    onChange={(e) => setSelectedTodo({
+                      ...selectedTodo, 
+                      altTodo: e.target.value
+                    })}
+                  />
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>Tarih</Form.Label>
+                  <Form.Control
+                    type="date"
+                    value={selectedTodo?.date || ""}
+                    onChange={(e) => setSelectedTodo({
+                      ...selectedTodo, 
+                      date: e.target.value
+                    })}
+                  />
+                </Form.Group>
+              </Form>
+            </Modal.Body>
+            <Modal.Footer>
+              <Button variant="secondary" onClick={() => setShowUpdateModal(false)}>
+                İptal
+              </Button>
+              <Button variant="primary" onClick={handleUpdateSave}>
+                Kaydet
+              </Button>
+            </Modal.Footer>
+          </Modal>
                </ul>
               </ReactDragListView> 
 
