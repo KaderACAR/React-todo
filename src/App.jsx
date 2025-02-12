@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import { Card, Container } from "react-bootstrap";
@@ -8,6 +8,7 @@ import Modal from "react-bootstrap/Modal";
 import { IoMdSunny, IoIosMoon } from "react-icons/io";
 import ReactDragListView from "react-drag-listview"
 import { nanoid } from "nanoid";
+
 
 
 const GlobalStyle = styled.div`
@@ -33,6 +34,18 @@ function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [selectedTodo, setSelectedTodo] = useState(null);
  
+
+  useEffect(() => {
+    const storedTodos = localStorage.getItem("todos");
+    if(storedTodos) {
+      setTodos(JSON.parse(storedTodos));
+    }
+  }, []);
+  
+  useEffect(() => {
+    localStorage.setItem("todos", JSON.stringify(todos));
+  }, [todos]);
+  
 
 
   const addTodo = (event) => {
