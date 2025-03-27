@@ -66,7 +66,7 @@ function App() {
 
   const deleteTodo = () => {
     setTodos((prevTodos) =>
-      prevTodos.filter((todo) => todo !== todoToDelete.id)
+      prevTodos.filter((todo) => todo.id !== todoToDelete.id)
     );
     setShowModal(false);
     setTodoToDelete(null);
@@ -103,7 +103,7 @@ const toggleTheme = () => {
 
 const handleSave = () => {
   setTodoAltInput(modalInput); 
-  setShow(false); 
+  setShow(false);
 }
 
 
